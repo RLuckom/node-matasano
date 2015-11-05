@@ -17,9 +17,8 @@ export function xorHex(hexString1, hexString2) {
 
 // lowest is best. Good texts are around 1.6 usually
 export function isEnglishScore(s) {
-  let lower = s.toLowerCase();
   return _.sum(characterFrequencies, (expectedPct, letter) => {
-    return Math.abs(expectedPct - (countOccurrences(lower, letter) / s.length));
+    return Math.abs(expectedPct - (countOccurrences(s, letter) / s.length));
   });
 }
 
