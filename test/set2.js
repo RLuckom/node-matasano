@@ -1,6 +1,7 @@
-import { padBuffer, aes128ECBCipher, aes128ECBDecipher, aes128CBCDecipher, aes128CBCCipher } from '../src/set2.js';
+import { padBuffer, aes128ECBCipher, aes128ECBDecipher, aes128CBCDecipher, aes128CBCCipher, aes128ECB_CBC_Detector } from '../src/set2.js';
 import chai from 'chai';
 import fs from 'fs';
+import crypto from 'crypto';
 var expect = chai.expect;
 const _ = require('lodash');
 
@@ -33,6 +34,49 @@ describe.only('Set 2: test padding', () => {
   });
 
   describe('Challenge 11: ECB / CBC Detector', () => {
+    function makeCheater() {
+      var n = 0;
+      return (buf) => {
+        let key = crypto.randomBytes(16);
+        let bytesToAppendBefore = crypto.randomBytes(Math.floor(Math.random() * 6) + 5);
+        let bytesToAppendAfter = crypto.randomBytes(Math.floor(Math.random() * 6) + 5);
+        if (n === 0) {
+          n = 1;
+          let padded = Buffer.concat([bytesToAppendBefore, buf, bytesToAppendAfter]);
+          let encrypted = aes128ECBCipher(padded, key);
+          return encrypted;
+        }
+        n = 0;
+        return aes128CBCCipher(Buffer.concat([bytesToAppendBefore, buf, bytesToAppendAfter]), key, crypto.randomBytes(16));
+      };
+    }
+    function honest(buf) {
+      let n = Math.floor(Math.random() * 2);
+      let key = crypto.randomBytes(16);
+      let bytesToAppendBefore = crypto.randomBytes(Math.floor(Math.random() * 6) + 5);
+      let bytesToAppendAfter = crypto.randomBytes(Math.floor(Math.random() * 6) + 5);
+      if (n === 0) {
+        let padded = Buffer.concat([bytesToAppendBefore, buf, bytesToAppendAfter]);
+        let encrypted = aes128ECBCipher(padded, key);
+        return encrypted;
+      }
+      return aes128CBCCipher(Buffer.concat([bytesToAppendBefore, buf, bytesToAppendAfter]), key, crypto.randomBytes(16));
+    }
 
+    it('detects ecb or cbc correctly in known cases', () => {
+      let cheater = makeCheater();
+      for (let n = 0; n < 100; n++) {
+        if (n % 2 === 0) {
+          expect(aes128ECB_CBC_Detector(cheater)).to.equal('aes-128-ecb');
+        } else {
+          expect(aes128ECB_CBC_Detector(cheater)).to.equal('aes-128-cbc');
+        }
+      }
+    });
+    it('detects ecb or cbc correctly in the conditions of the assignment', () => {
+      for (let n = 0; n < 100; n++) {
+        aes128ECB_CBC_Detector(honest); // I guess I just hope it's right?
+      }
+    });
   });
 });

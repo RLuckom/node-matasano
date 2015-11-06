@@ -14,16 +14,18 @@ export function padBuffer(buffer, size, padByte) {
 }
 
 export function aes128ECBDecipher(buf, key) {
+  let padded = padBuffer(buf, 16);
   let decipher = crypto.createDecipheriv('aes-128-ecb', key, new Buffer(0));
   decipher.setAutoPadding(false);
-  let plaintext = Buffer.concat([decipher.update(buf),  decipher.final()]);
+  let plaintext = Buffer.concat([decipher.update(padded),  decipher.final()]);
   return plaintext;
 }
 
 export function aes128ECBCipher(buf, key) {
+  let padded = padBuffer(buf, 16);
   let cipher = crypto.createCipheriv('aes-128-ecb', key, new Buffer(0));
   cipher.setAutoPadding(false);
-  let ciphertext = Buffer.concat([cipher.update(buf),  cipher.final()]);
+  let ciphertext = Buffer.concat([cipher.update(padded),  cipher.final()]);
   return ciphertext;
 }
 
@@ -71,4 +73,19 @@ export function aes128CBCCipher(buf, key, iv) {
     last = currentCrypt;
   }
   return encrypted;
+}
+
+export function aes128ECB_CBC_Detector(f) {
+  let testBuf = new Buffer(600);
+  testBuf.fill(67);
+  let encrypted = f(testBuf);
+  let seen = [];
+  for (let pos = 0; pos < encrypted.length; pos += 16) {
+    let cur = encrypted.slice(pos, pos + 16).toString('base64');
+    if (seen.indexOf(cur) !== -1) {
+      return 'aes-128-ecb';
+    }
+    seen.push(cur);
+  }
+  return 'aes-128-cbc';
 }
