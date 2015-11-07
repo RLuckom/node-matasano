@@ -1,3 +1,5 @@
+![Travis CI Status Image](https://travis-ci.org/RLuckom/node-matasano.svg)
+
 An attempt at the [Matasano Crypto Challenges](http://cryptopals.com/) in Nodejs.
 
 This project uses ES6 compiled to JS by Babel 6.
