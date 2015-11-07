@@ -1,3 +1,5 @@
 {
-  "esnext" : true
+  "esnext" : true,
+  "module": true,
+  "predef": ["require", "describe", "it", "Buffer", "module"]
 }

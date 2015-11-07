@@ -1,4 +1,3 @@
-"use strict";
 const crypto = require('crypto');
 
 function padBuffer(buffer, size, padByte) {

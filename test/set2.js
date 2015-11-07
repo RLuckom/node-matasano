@@ -1,4 +1,3 @@
-"use strict";
 const set2 = require('../src/set2.js');
 const expect = require('chai').expect;
 const crypto = require('crypto');
