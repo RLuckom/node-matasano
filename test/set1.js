@@ -1,7 +1,7 @@
-import { hexToB64, xorHex, isEnglishScore, countOccurrences, repeatedXor, hammingDistance, findKey, aes128ECBDecipher, isAES128ECB } from '../src/set1.js';
-import chai from 'chai';
-import fs from 'fs';
-var expect = chai.expect;
+"use strict";
+const set1 = require('../src/set1.js');
+const expect = require('chai').expect;
+const fs = require('fs');
 const _ = require('lodash');
 
 describe('set1 functions', () => {
@@ -9,7 +9,7 @@ describe('set1 functions', () => {
     it('converts correctly', () => {
       const testString = '49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d';
       const expectedString = 'SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t';
-      expect(hexToB64(testString)).to.equal(expectedString);
+      expect(set1.hexToB64(testString)).to.equal(expectedString);
     });
   });
   describe('Challenge 2: xor hex', () => {
@@ -17,14 +17,14 @@ describe('set1 functions', () => {
       let s1 = '1c0111001f010100061a024b53535009181c';
       let s2 = '686974207468652062756c6c277320657965';
       let expected = '746865206b696420646f6e277420706c6179';
-      expect(repeatedXor(new Buffer(s1, 'hex'), new Buffer(s2, 'hex')).toString('hex')).to.equal(expected);
+      expect(set1.repeatedXor(new Buffer(s1, 'hex'), new Buffer(s2, 'hex')).toString('hex')).to.equal(expected);
     });
   });
   describe('Challenge 3: Single-byte XOR', () => {
-    describe('countOccurrences', () => {
+    describe('set1.countOccurrences', () => {
       it('converts correctly', () => {
-        expect(countOccurrences('hhh', 'h')).to.equal(3);
-        expect(countOccurrences('hhh', '5')).to.equal(0);
+        expect(set1.countOccurrences('hhh', 'h')).to.equal(3);
+        expect(set1.countOccurrences('hhh', '5')).to.equal(0);
       });
     });
     // Get a map of english character frequencies.
@@ -41,11 +41,11 @@ describe('set1 functions', () => {
         fs.writeFileSync('hist.json', JSON.stringify(_.mapValues(hist, (v) => {return v / mobyDick.length;}), null, 2));
       });
     });
-    describe('dial in isEnglishScore', () => {
-      it('log the scores here to see how isEnglishScore does', () => {
-        isEnglishScore('kjhfzdxcvbkjtrsdxcnvkjtrdcvgjfxcfrdsfx');
-        isEnglishScore('hello, this is an english sentence');
-        isEnglishScore('to be ornot to be that is the question whether tis nobler in the mind to suffer the slings and arrows');
+    describe('dial in set1.isEnglishScore', () => {
+      it('log the scores here to see how set1.isEnglishScore does', () => {
+        set1.isEnglishScore('kjhfzdxcvbkjtrsdxcnvkjtrdcvgjfxcfrdsfx');
+        set1.isEnglishScore('hello, this is an english sentence');
+        set1.isEnglishScore('to be ornot to be that is the question whether tis nobler in the mind to suffer the slings and arrows');
       });
     });
     describe('find plaintext', () => {
@@ -56,8 +56,8 @@ describe('set1 functions', () => {
         let xor = new Buffer(1);
         for(let v = 0; v < 256; v++) {
           xor[0] = v;
-          let current = repeatedXor(secretBuf, xor).toString('utf8');
-          let currentScore = isEnglishScore(current);
+          let current = set1.repeatedXor(secretBuf, xor).toString('utf8');
+          let currentScore = set1.isEnglishScore(current);
           best = !best || currentScore < best.score ? {string: current, score: currentScore} : best;
         }
         console.log(best);
@@ -74,8 +74,8 @@ describe('set1 functions', () => {
         for(let v = 0; v < 256; v++) {
           let secretBuf = new Buffer(secret, 'hex');
           xor[0] = v;
-          let current = repeatedXor(secretBuf, xor).toString('utf8');
-          let currentScore = isEnglishScore(current);
+          let current = set1.repeatedXor(secretBuf, xor).toString('utf8');
+          let currentScore = set1.isEnglishScore(current);
           best = !best || currentScore < best.score ? {string: current, score: currentScore} : best;
         }
       });
@@ -86,7 +86,7 @@ describe('set1 functions', () => {
     function testRepeatingXOR(s, xor, expectedHex) {
       let buf = new Buffer(s, 'utf8');
       let xorBuf = new Buffer(xor, 'utf8');
-      expect(repeatedXor(buf, xorBuf).toString('hex')).to.equal(expectedHex);
+      expect(set1.repeatedXor(buf, xorBuf).toString('hex')).to.equal(expectedHex);
     }
     it('xors to correct hex', () => {
       testRepeatingXOR(
@@ -98,17 +98,18 @@ describe('set1 functions', () => {
     });
   });
   describe('Challenge 6: Break repeating-key XOR', () => {
-    describe('hammingDistance', () => {
+    describe('set1.hammingDistance', () => {
       it('is calculated correctly', () => {
-        expect(hammingDistance(new Buffer('this is a test', 'utf8'), new Buffer('wokka wokka!!!', 'utf8'))).to.equal(37);
+        expect(set1.hammingDistance(new Buffer('this is a test', 'utf8'), new Buffer('wokka wokka!!!', 'utf8'))).to.equal(37);
       });
     });
     describe('find the key, decrypt the message', () => {
       it('does those things', function() {
         this.timeout(5000);
         let secret = fs.readFileSync('./handouts/6.txt', {encoding: 'utf8'}).replace(/\n/g, '');
-        let key = findKey(new Buffer(secret, 'base64'));
-        let plain = repeatedXor(new Buffer(secret, 'base64'), key).toString('utf8');
+        let key = set1.findKey(new Buffer(secret, 'base64'));
+        console.log('after setkey');
+        let plain = set1.repeatedXor(new Buffer(secret, 'base64'), key).toString('utf8');
         console.log(plain);
       });
     });
@@ -117,13 +118,13 @@ describe('set1 functions', () => {
     it('decrypts correctly', function() {
       let secret = fs.readFileSync('./handouts/7.txt', {encoding: 'utf8'}).replace(/\n/g, '');
       let key = 'YELLOW SUBMARINE';
-      console.log(aes128ECBDecipher(secret, key).toString('utf8'));
+      console.log(set1.aes128ECBDecipher(secret, key).toString('utf8'));
     });
   });
   describe('Challenge 8: detect aes 128 ecb', () => {
     it('picks one line', function() {
       let secrets = fs.readFileSync('./handouts/8.txt', {encoding: 'utf8'}).split('\n');
-      _.each(secrets, (secret) => {if (isAES128ECB(new Buffer(secret, 'base64'))) {console.log(secret);}});  
+      _.each(secrets, (secret) => {if (set1.isAES128ECB(new Buffer(secret, 'base64'))) {console.log(secret);}});  
     });
   });
 });

@@ -1,11 +1,12 @@
+"use strict"
 const _ = require('lodash');
 const crypto = require('crypto');
 
-export function hexToB64(hexString) {
+function hexToB64(hexString) {
   return new Buffer(hexString, 'hex').toString('base64');
 }
 
-export function xorHex(hexString1, hexString2) {
+function xorHex(hexString1, hexString2) {
   let b1 = new Buffer(hexString1, 'hex');
   let b2 = new Buffer(hexString2, 'hex');
   let xored = new Buffer(b1.length);
@@ -16,17 +17,17 @@ export function xorHex(hexString1, hexString2) {
 }
 
 // lowest is best. Good texts are around 1.6 usually
-export function isEnglishScore(s) {
+function isEnglishScore(s) {
   return _.sum(characterFrequencies, (expectedPct, letter) => {
     return Math.abs(expectedPct - (countOccurrences(s, letter) / s.length));
   });
 }
 
-export function countOccurrences(s, sub) {
+function countOccurrences(s, sub) {
   return (s.match(new RegExp(sub, 'g')) || []).length;
 }
 
-export function repeatedXor(buf, xorBuf) {
+function repeatedXor(buf, xorBuf) {
   let xored = new Buffer(buf.length);
   for(let x = 0; x < buf.length; x++) {
     xored[x] = buf[x] ^ xorBuf[x % xorBuf.length];
@@ -34,7 +35,7 @@ export function repeatedXor(buf, xorBuf) {
   return xored;
 }
 
-export function hammingDistance(buf1, buf2) {
+function hammingDistance(buf1, buf2) {
   let longestLen = _.max([buf1.length, buf2.length]);
   let dist = 0;
   for (let x = 0; x < longestLen; x++) {
@@ -46,7 +47,7 @@ export function hammingDistance(buf1, buf2) {
   return dist;
 }
 
-export function testKeySize(buf, size) {
+function testKeySize(buf, size) {
   let b1 = new Buffer(buf.slice(0, size));
   let b2 = new Buffer(buf.slice(size, size * 2));
   let b3 = new Buffer(buf.slice(size * 2, size * 3));
@@ -60,7 +61,7 @@ export function testKeySize(buf, size) {
   return _.sum([d1, d2, d3, d4, d5, d6]) / 6;
 }
 
-export function findKeySize(buf) {
+function findKeySize(buf) {
   let keysize = null;
   for (let x = 1; x < 40; x++) {
     let currentScore = testKeySize(buf, x);
@@ -69,7 +70,7 @@ export function findKeySize(buf) {
   return keysize.keysize;
 }
 
-export function keyWithBestEnglishScore(buf, keyBufs) {
+function keyWithBestEnglishScore(buf, keyBufs) {
   let bestKeyBuf = null;
   _.each(keyBufs, (kb) => {
     let score = isEnglishScore(repeatedXor(buf, kb).toString('utf8'));
@@ -78,7 +79,7 @@ export function keyWithBestEnglishScore(buf, keyBufs) {
   return bestKeyBuf.keyBuf;
 }
 
-export function findKey(buf) {
+function findKey(buf) {
   let keySize = findKeySize(buf);
   let key = new Buffer(keySize);
   let chars = [];
@@ -118,14 +119,14 @@ export function findKey(buf) {
 // 1) What is the correct openssl invocation to decipher the ciphertext?
 // 2) What is the difference between providing a zero-length IV buffer and
 //    whatever the default is?
-export function aes128ECBDecipher(s, key) {
+function aes128ECBDecipher(s, key) {
   let decipher = crypto.createDecipheriv('aes-128-ecb', key, new Buffer(0));
   let b = new Buffer(s, 'base64');
   let plaintext = Buffer.concat([decipher.update(b),  decipher.final()]);
   return plaintext;
 }
 
-export function isAES128ECB(buf) {
+function isAES128ECB(buf) {
   let known = [];
   let blockSize = 16;
   for(let pos = 0; pos < buf.length; pos += blockSize) {
@@ -222,4 +223,20 @@ const characterFrequencies = {
   "/": 0.000020679331962134552,
   "%": 7.953589216205597e-7,
   "@": 0.0000015907178432411195
+};
+
+module.exports = {
+  hexToB64: hexToB64,
+  xorHex: xorHex,
+  isEnglishScore: isEnglishScore,
+  countOccurrences: countOccurrences,
+  repeatedXor: repeatedXor,
+  hammingDistance: hammingDistance,
+  testKeySize: testKeySize,
+  findKeySize: findKeySize,
+  keyWithBestEnglishScore: keyWithBestEnglishScore,
+  aes128ECBDecipher: aes128ECBDecipher,
+  isAES128ECB: isAES128ECB,
+  findKey: findKey,
+  characterFrequencies: characterFrequencies
 };

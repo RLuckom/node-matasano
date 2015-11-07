@@ -1,6 +1,7 @@
-import crypto from 'crypto';
+"use strict";
+const crypto = require('crypto');
 
-export function padBuffer(buffer, size, padByte) {
+function padBuffer(buffer, size, padByte) {
   // the padded size is exactly the buffer length if the buffer length is
   // already a multiple of size. Otherwise, the buffer length is size times one
   // more than buffer length / size, rounded down..
@@ -13,7 +14,7 @@ export function padBuffer(buffer, size, padByte) {
   return newBuffer;
 }
 
-export function aes128ECBDecipher(buf, key) {
+function aes128ECBDecipher(buf, key) {
   let padded = padBuffer(buf, 16);
   let decipher = crypto.createDecipheriv('aes-128-ecb', key, new Buffer(0));
   decipher.setAutoPadding(false);
@@ -21,7 +22,7 @@ export function aes128ECBDecipher(buf, key) {
   return plaintext;
 }
 
-export function aes128ECBCipher(buf, key) {
+function aes128ECBCipher(buf, key) {
   let padded = padBuffer(buf, 16);
   let cipher = crypto.createCipheriv('aes-128-ecb', key, new Buffer(0));
   cipher.setAutoPadding(false);
@@ -29,9 +30,9 @@ export function aes128ECBCipher(buf, key) {
   return ciphertext;
 }
 
-export function xorBufs(b1, b2) {
+function xorBufs(b1, b2) {
   if (b1.length !== b2.length) {
-    throw new Error(`b1 was ${b1.length}, b2 was ${b2.length}`);
+    throw new Error('b1 was ' + b1.length + ', b2 was ${b2.length}');
   }
   let ret = new Buffer(b1.length);
   for (let pos = 0; pos < b1.length; pos++) {
@@ -40,7 +41,7 @@ export function xorBufs(b1, b2) {
   return ret;
 }
 
-export function aes128CBCDecipher(buf, key, iv) {
+function aes128CBCDecipher(buf, key, iv) {
   if (!iv) {
     iv = new Buffer(16);
     iv.fill(0);
@@ -57,7 +58,7 @@ export function aes128CBCDecipher(buf, key, iv) {
   return decrypted;
 }
 
-export function aes128CBCCipher(buf, key, iv) {
+function aes128CBCCipher(buf, key, iv) {
   if (!iv) {
     iv = new Buffer(16);
     iv.fill(0);
@@ -75,7 +76,7 @@ export function aes128CBCCipher(buf, key, iv) {
   return encrypted;
 }
 
-export function aes128ECB_CBC_Detector(f) {
+function aes128ECB_CBC_Detector(f) {
   let testBuf = new Buffer(600);
   testBuf.fill(67);
   let encrypted = f(testBuf);
@@ -89,3 +90,13 @@ export function aes128ECB_CBC_Detector(f) {
   }
   return 'aes-128-cbc';
 }
+
+module.exports = {
+  aes128ECBCipher: aes128ECBCipher,
+  aes128ECBDecipher: aes128ECBDecipher,
+  aes128CBCCipher: aes128CBCCipher,
+  aes128ECB_CBC_Detector: aes128ECB_CBC_Detector,
+  aes128CBCDecipher: aes128CBCDecipher,
+  padBuffer: padBuffer,
+  xorBufs: xorBufs
+};

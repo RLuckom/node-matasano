@@ -2,7 +2,7 @@
 
 An attempt at the [Matasano Crypto Challenges](http://cryptopals.com/) in Nodejs.
 
-This project uses ES6 compiled to JS by Babel 6.
+This project uses ES6 features included in Node as of version 5.x.
 
 To build:
 
