@@ -1,3 +1,4 @@
+'use strict';
 const set2 = require('../src/set2.js');
 const expect = require('chai').expect;
 const crypto = require('crypto');
@@ -5,6 +6,7 @@ const fs = require('fs');
 const _ = require('lodash');
 
 describe('Set 2: test padding', () => {
+  'use strict';
   describe('Challenge 9: test padding', () => {
     it('pads to a multiple of size', () => {
       let buffer = new Buffer('YELLOW SUBMARINE', 'utf8');

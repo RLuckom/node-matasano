@@ -1,5 +1,6 @@
 {
   "esnext" : true,
+  "-W097": false,
   "module": true,
-  "predef": ["require", "describe", "it", "Buffer", "module"]
+  "predef": ["require", "describe", "it", "Buffer", "module", "xdescribe", "console"]
 }

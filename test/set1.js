@@ -1,3 +1,4 @@
+'use strict';
 const set1 = require('../src/set1.js');
 const expect = require('chai').expect;
 const fs = require('fs');
