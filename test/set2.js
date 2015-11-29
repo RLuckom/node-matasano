@@ -6,7 +6,6 @@ const fs = require('fs');
 const _ = require('lodash');
 
 describe('Set 2: test padding', () => {
-  'use strict';
   describe('Challenge 9: test padding', () => {
     it('pads to a multiple of size', () => {
       let buffer = new Buffer('YELLOW SUBMARINE', 'utf8');
@@ -68,16 +67,41 @@ describe('Set 2: test padding', () => {
       let cheater = makeCheater();
       for (let n = 0; n < 100; n++) {
         if (n % 2 === 0) {
-          expect(set2.aes128ECB_CBC_Detector(cheater)).to.equal('aes-128-ecb');
+          let res = set2.aesUpTo1024ECB_CBC_Detector(cheater);
+          expect(res.name).to.equal('aes-128-ecb');
+          expect(res.keyLength).to.equal(16);
         } else {
-          expect(set2.aes128ECB_CBC_Detector(cheater)).to.equal('aes-128-cbc');
+          expect(set2.aesUpTo1024ECB_CBC_Detector(cheater)).to.equal('cbc');
         }
       }
     });
     it('detects ecb or cbc correctly in the conditions of the assignment', () => {
       for (let n = 0; n < 100; n++) {
-        set2.aes128ECB_CBC_Detector(honest); // I guess I just hope it's right?
+        set2.aesUpTo1024ECB_CBC_Detector(honest); // I guess I just hope it's right?
       }
+    });
+  });
+  describe('Challenge 12: decrypt ECB', () => {
+    let b64Text = ('Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg\n' +
+      'aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq\n' +
+      'dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg\n' +
+      'YnkK').replace(/\n/g, '');
+    function makeCh12Function() {
+      let key = crypto.randomBytes(16);
+      let b64Buf = new Buffer(b64Text, 'base64');
+      return (plainBuf) => {
+        return set2.aes128ECBCipher(Buffer.concat([plainBuf, b64Buf]), key);
+      };
+    }
+
+    it('detects the length of the key', () => {
+      expect(set2.aesUpTo1024ECB_CBC_Detector(makeCh12Function()).keyLength).to.equal(16);
+    });
+    it('detects the encryption scheme', () => {
+      expect(set2.aesUpTo1024ECB_CBC_Detector(makeCh12Function()).name).to.equal('aes-128-ecb');
+    });
+    it('decrypts the message byte by byte', () => {
+      expect(set2.byteWiseDecryptECB(makeCh12Function()).slice(0, new Buffer(b64Text, 'base64').length).toString('base64')).to.equal(b64Text);
     });
   });
 });

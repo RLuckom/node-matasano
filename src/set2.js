@@ -1,5 +1,6 @@
 'use strict';
 const crypto = require('crypto');
+const _ = require('lodash');
 
 function padBuffer(buffer, size, padByte) {
   // the padded size is exactly the buffer length if the buffer length is
@@ -76,27 +77,67 @@ function aes128CBCCipher(buf, key, iv) {
   return encrypted;
 }
 
-function aes128ECB_CBC_Detector(f) {
+function aesUpTo1024ECB_CBC_Detector(f) {
   let testBuf = new Buffer(600);
   testBuf.fill(67);
   let encrypted = f(testBuf);
-  let seen = [];
-  for (let pos = 0; pos < encrypted.length; pos += 16) {
-    let cur = encrypted.slice(pos, pos + 16).toString('base64');
-    if (seen.indexOf(cur) !== -1) {
-      return 'aes-128-ecb';
+  let bestScore = 0;
+  let bestKeyLength = null;
+  for (let keyLength = 8; keyLength <= 128; keyLength = keyLength * 2) { 
+    let seen = {};
+    for (let pos = 0; pos < encrypted.length; pos += keyLength) {
+      let cur = encrypted.slice(pos, pos + keyLength).toString('base64');
+      seen[cur] = seen[cur] ? seen[cur] + 1 : 1;
     }
-    seen.push(cur);
+    if (_.max(seen) > 1) {
+      let score = _.max(seen) / (encrypted.length / keyLength);
+      if (score > bestScore) {
+        bestScore = score;
+        bestKeyLength = keyLength;
+      }
+    }
   }
-  return 'aes-128-cbc';
+  if (bestKeyLength) {
+    return {name: 'aes-' + bestKeyLength * 8 + '-ecb', keyLength: bestKeyLength};
+  }
+  return 'cbc';
 }
+
+function byteWiseDecryptECB(f) {
+  let alg = aesUpTo1024ECB_CBC_Detector(f);
+  if (alg.name === 'cbc') {
+    throw new Error('cannot decrypt cbc mode ciphertext');
+  }
+  function findNextByte(knownBytes) {
+    let testBufLength = knownBytes.length + 1;
+    let paddingBuf = new Buffer(alg.keyLength - (testBufLength % alg.keyLength));
+    paddingBuf.fill(0);
+    let testBuf = new Buffer(testBufLength);
+    knownBytes.copy(testBuf);
+    let bytesMap = {};
+    let controlledBytesLength = testBufLength + paddingBuf.length;
+    for (let val =0; val < 256; val++) {
+      testBuf[knownBytes.length] = val;
+      bytesMap[f(Buffer.concat([paddingBuf, testBuf])).slice(0, controlledBytesLength).toString('base64')] = val;
+    }
+    return bytesMap[f(paddingBuf).slice(0, controlledBytesLength).toString('base64')];
+  }
+  let cipherTextLength = f(new Buffer(0)).length;
+  let clearText = new Buffer(cipherTextLength);
+  for (let indx = 0; indx < cipherTextLength; indx++) {
+    clearText[indx] = findNextByte(clearText.slice(0, indx));
+  }
+  return clearText;
+}
+
 
 module.exports = {
   aes128ECBCipher: aes128ECBCipher,
   aes128ECBDecipher: aes128ECBDecipher,
   aes128CBCCipher: aes128CBCCipher,
-  aes128ECB_CBC_Detector: aes128ECB_CBC_Detector,
+  aesUpTo1024ECB_CBC_Detector: aesUpTo1024ECB_CBC_Detector,
   aes128CBCDecipher: aes128CBCDecipher,
   padBuffer: padBuffer,
-  xorBufs: xorBufs
+  xorBufs: xorBufs,
+  byteWiseDecryptECB: byteWiseDecryptECB
 };
